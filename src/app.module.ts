@@ -6,6 +6,7 @@ import { ActivityModule } from './activity/activity.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TasksService } from './taskservice.service';
+import { AssignmentService } from './assignment/assignment.service';
 import { AssignmentModule } from './assignment/assignment.module';
 
 @Module({
@@ -17,6 +18,6 @@ import { AssignmentModule } from './assignment/assignment.module';
     AssignmentModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TasksService],
+  providers: [AppService, TasksService, AssignmentService],
 })
 export class AppModule {}

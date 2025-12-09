@@ -1,36 +1,15 @@
-
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from './prisma/prisma.service';
-
+import { Cron } from '@nestjs/schedule';
+import { AssignmentService } from './assignment/assignment.service';
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly assignmentService: AssignmentService) {}
 
- @Cron("0 */3 * * * *")
-async unassignInactiveEmployees() {
-  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-  console.log("Checking for inactive activities before:", tenMinutesAgo);
-  const inactive = await this.prisma.activity.findMany({
-    where: {
-         lastWorkedAt: { lt: tenMinutesAgo } ,
-    }
-  });
-
-  console.log("Inactive activities:", inactive);
-
-  for (const record of inactive) {
-    await this.prisma.activity.update({
-      where: { id: record.id },
-      data: { employeeId: null,
-        lastWorkedAt: null
-       }
-    });
-    this.logger.debug(`Unassigned employee from activity ${record.id}`);
+  @Cron("0 */1 * * * *")
+  async unassignInactiveEmployees() {
+    return this.assignmentService.unassign();
   }
-}
-
 }

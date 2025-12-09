@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { title } from 'process';
 
 @Injectable()
 export class ActivityService {
@@ -18,11 +19,15 @@ export class ActivityService {
       if (!employee) {
         throw new BadRequestException(`Employee with ID ${createActivityDto.employeeId} not found`);
       }
+      if(!createActivityDto.title){
+        throw new BadRequestException(`Title is required to create an activity`);
+      }
 
       const activity = await this.prisma.activity.create({
         data: {
-          employeeId: createActivityDto.employeeId,
           lastWorkedAt: new Date(),
+          assignments: {create:[{title: createActivityDto.title }, {title: createActivityDto.title },{title: createActivityDto.title },{title: createActivityDto.title },{title: createActivityDto.title },{title: createActivityDto.title }]},
+          employee:{connect:{id:createActivityDto.employeeId}}
         },
         include: {
           employee: true,
@@ -33,10 +38,6 @@ export class ActivityService {
       this.logger.log(`Created activity for employee: ${employee.name} (ID: ${activity.id})`);
       return activity;
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      this.logger.error(`Failed to create activity: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -50,7 +51,6 @@ export class ActivityService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to fetch activities: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -71,10 +71,6 @@ export class ActivityService {
 
       return activity;
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error(`Failed to fetch activity ${id}: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -89,39 +85,10 @@ export class ActivityService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to fetch activities for employee ${employeeId}: ${error.message}`, error.stack);
       throw error;
     }
   }
 
-  
-
-  async update(id: number, updateActivityDto: UpdateActivityDto) {
-    try {
-      await this.findOne(id);
-
-      const activity = await this.prisma.activity.update({
-        where: { id },
-        data: {
-          ...(updateActivityDto.employeeId && { employeeId: updateActivityDto.employeeId }),
-         
-        },
-        include: {
-          employee: true,
-          assignments: true,
-        },
-      });
-
-      this.logger.log(`Updated activity ID: ${activity.id}`);
-      return activity;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error(`Failed to update activity ${id}: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
 
    async employeeWorked(id: number) {
     try {
@@ -130,6 +97,7 @@ export class ActivityService {
      const employeeWorkedTime=  await this.prisma.activity.update({
         where: { id },
         data: {
+        employeeId:id,
          lastWorkedAt: new Date(),
         },
         include: {
@@ -137,26 +105,11 @@ export class ActivityService {
           assignments: true,
         },
       });
-      return `Activity #${id} lastWorkedAt updated to current time ${employeeWorkedTime.lastWorkedAt}. employee: ${employeeWorkedTime}`;
+      return `Activity #${id} lastWorkedAt updated to current time ${employeeWorkedTime.lastWorkedAt}. employee: ${employeeWorkedTime.assignments.map(a=>a.title).join(", ")} employee name: ${employeeWorkedTime.employee?.name} `;
     } catch (error) {
       throw error;
     }
   }
 
-  async remove(id: number) {
-    try {
-      await this.findOne(id);
-      await this.prisma.activity.delete({
-        where: { id },
-      });
-      this.logger.log(`Deleted activity with ID: ${id}`);
-       return { message: `Activity with ID ${id} has been deleted`, id };
-    } catch (error) {
-       if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error(`Failed to delete activity ${id}: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
+
 }

@@ -8,5 +8,12 @@ export class CreateActivityDto {
     nullable: true 
   })
   employeeId?: number;
+   @ApiProperty({ 
+    description: 'The title of the activity', 
+    example: "new activity", 
+    required: false,
+    nullable: true 
+  })
+  title?: string;
 
 }

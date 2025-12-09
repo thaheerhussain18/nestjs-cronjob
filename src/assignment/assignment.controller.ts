@@ -8,34 +8,4 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('assignment')
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
-
-  @Post()
-  create(@Body() createAssignmentDto: CreateAssignmentDto) {
-    return this.assignmentService.create(createAssignmentDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.assignmentService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.assignmentService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAssignmentDto: UpdateAssignmentDto) {
-    return this.assignmentService.update(+id, updateAssignmentDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.assignmentService.remove(+id);
-  }
-
-  @Patch(':id/complete')
-  complete(@Param('id') id: string) {
-    return this.assignmentService.complete(+id);
-  }
 }

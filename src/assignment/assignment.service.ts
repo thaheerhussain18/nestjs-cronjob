@@ -5,48 +5,43 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AssignmentService {
-  constructor(private readonly prismaService:PrismaService) {}
-  async create(createAssignmentDto: CreateAssignmentDto) {
-   const activity=await this.prismaService.activity.findFirst({
-      where: { id: createAssignmentDto.activityId }
+  constructor(private readonly prismaService: PrismaService) {}
+
+  async unassign() {
+    const tenMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+    const records = await this.prismaService.activity.findMany({
+      include: { employee: true, assignments: true },
     });
-    if (!activity) {
-      throw new ConflictException(`Activity with ID ${createAssignmentDto.activityId} not found`);
+    console.log(
+      'Records:',
+      records.map((r) => ({
+        id: r.id,
+        employee: r.employee?.name,
+        lastWorkedAt: r.lastWorkedAt,
+        assignments: r.assignments.map((a) => a.title),
+      })),
+    );
+    const inactive = await this.prismaService.activity.findMany({
+      where: {
+        lastWorkedAt: { lt: tenMinutesAgo },
+      },
+      include: {
+        assignments: true,
+      },
+    });
+
+    const assignmentIds = inactive.flatMap((activity) =>
+      activity.assignments.map((a) => a.id),
+    );
+
+    if (assignmentIds.length > 0) {
+      await this.prismaService.assignment.updateMany({
+        where: { id: { in: assignmentIds } },
+        data: { status: false },
+      });
     }
-const assignment = await this.prismaService.assignment.create({
-  data:{
-    title: createAssignmentDto.title,
-    activityId: createAssignmentDto.activityId,
-    ...(createAssignmentDto.status !== undefined && { status: createAssignmentDto.status })
-  },
-  include:{
-    activity:true
-  }
-})
-return assignment;
-  }
-
-  findAll() {
-    return `This action returns all assignment`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} assignment`;
-  }
-
-  update(id: number, updateAssignmentDto: UpdateAssignmentDto) {
-    return `This action updates a #${id} assignment`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} assignment`;
-  }
-
-  async complete(id: number) {
-    await this.prismaService.assignment.update({
-      where: { id },
-      data: { status: false }
-    });
-    return `Assignment #${id} marked as completed.`;
+    console.log(
+      `Unassigned ${assignmentIds.length} assignments from inactive employees.`,
+    );
   }
 }
