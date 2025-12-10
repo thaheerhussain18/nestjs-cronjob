@@ -10,6 +10,6 @@ export class TasksService {
 
   @Cron("0 */1 * * * *")
   async unassignInactiveEmployees() {
-    return this.assignmentService.unassign();
+    // return this.assignmentService.unassign();
   }
 }
