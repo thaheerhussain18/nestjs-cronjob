@@ -1,18 +1,24 @@
 // CONSUMER PROCESSOR - Picks up jobs from queue and processes them
 import { Process, Processor } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import type { Job } from 'bull';
+import type { Redis } from 'ioredis';
 import { CsvdataService } from 'src/csvdata/csvdata.service';
-import {v4} from 'uuid';
-  
+import { REDIS_CLIENT } from '../redis/redis.module';
+import { BaseQueueService } from '../common/base-queue.service';
+
 @Processor('queue-insert')
-export class SimpleQueueProcessor {
-  private readonly logger = new Logger(SimpleQueueProcessor.name);
-  constructor(private readonly csvdataService: CsvdataService) {}
+export class SimpleQueueProcessor extends BaseQueueService {
+  constructor(
+    @Inject(REDIS_CLIENT) redis: Redis,
+    private readonly csvdataService: CsvdataService,
+  ) {
+    super(redis);
+  }
   
-  @Process('process-row')
+  @Process({ name: 'process-row', concurrency: 5 })
   async handleProcessRow(job: Job) {
-    const { name, code, description } = job.data;
+    const { name, code, description, batchUuid } = job.data;
     
     if (!name) {
       throw new Error('Name is required');
@@ -25,5 +31,9 @@ export class SimpleQueueProcessor {
     }
     
     await this.csvdataService.createCsvData({ name, code, description });
+    console.log(` Inserted record: ${name} ${code} ${batchUuid}, 'batch'}`);
+    if (batchUuid) {
+      await this.trackBatchCompletion(batchUuid, 'batch');
+    }
   }
 }

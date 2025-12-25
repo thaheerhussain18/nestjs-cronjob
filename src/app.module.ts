@@ -12,9 +12,13 @@ import { AssignmentModule } from './assignment/assignment.module';
 import { SimpleQueueModule } from './simple-queue/simple-queue.module';
 import { CsvdataModule } from './csvdata/csvdata.module';
 import { FileGenerateModule } from './file-generate/file-generate.module';
+import { RedisModule } from './redis/redis.module';
+import { DemoModule } from './demo/demo.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
+    RedisModule,
     PrismaModule,
     EmployeeModule,
     ActivityModule,
@@ -31,6 +35,8 @@ import { FileGenerateModule } from './file-generate/file-generate.module';
     SimpleQueueModule,
     CsvdataModule,
     FileGenerateModule,
+    DemoModule,
+    LoggerModule,
   ],
   controllers: [AppController],
   providers: [AppService, TasksService, AssignmentService],

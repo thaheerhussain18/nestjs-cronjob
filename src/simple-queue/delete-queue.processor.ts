@@ -19,6 +19,5 @@ export class DeleteQueueProcessor {
     }
 
     await this.csvdataService.removeCsvData(id);
-    this.logger.log(`✅ Deactivated record: ${id}`);
   }
 }

@@ -1,14 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
-import { CsvdataService } from 'src/csvdata/csvdata.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-
+import moment from 'moment';
+import * as puppeteer from 'puppeteer';
 @Injectable()
 export class FileGenerateService {
-    constructor(private readonly csvDataService: CsvdataService,
-        private readonly prismaService: PrismaService
-    ) {}
+    constructor(private readonly prismaService: PrismaService) {}
   async generateSampleExcel(rowCount: number = 100) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sample Data');
@@ -118,4 +116,122 @@ export class FileGenerateService {
 
     return { isValid: errors.length === 0, errors };
   }
+  async generateTablePDF(data: any[], fileName: string, columns: string[]): Promise<Buffer> {
+    try {
+      const launchOptions: any = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      };
+      
+      if (process.env.FILE_GENERATION_CHROME_PATH) {
+        launchOptions.executablePath = process.env.FILE_GENERATION_CHROME_PATH;
+      }
+      
+      const browser = await puppeteer.launch(launchOptions);
+ 
+      const page = await browser.newPage();
+ 
+      // Define some constants for layout and styling
+      const mainHeader = 'SyncOffice';
+      const currentDate = moment().format('DD-MM-YYYY');
+ 
+      // Define the header template
+      const headerTemplate = `
+        <div style="width: 100%; color: black;padding: 0px 20px 15px 20px;  font-size: 13px; display: flex; justify-content: space-between; align-items: center; font-weight: 600;">
+          <div>${mainHeader}</div>
+          <div>${fileName}</div>
+          <div>${currentDate}</div>
+        </div>
+      `;
+ 
+      // Define the footer template
+      const footerTemplate = `
+        <div style="width: 100%; font-size: 12px;padding: 20px 20px 0px 10px; border-top: 1px solid #ddd; font-weight: 600;">
+          <div style="color: black; display: flex; align-items: center; justify-content: space-between;">
+            <span style="margin-left: 10px;">Copyright © Candy Technologies Private Limited. All Rights Reserved.</span>
+          </div>
+        </div>
+      `;
+ 
+      // Create an HTML template for the PDF content
+      const content = `
+            <html>
+              <head>
+                <style>
+                  body {
+                    font-family: 'Montserrat', sans-serif;
+                    margin: 0;          
+                  }
+                  table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    text-align: left;
+                    border-left: 1px dotted #ddd;
+                  }
+                  
+                  td {
+                    padding: 8px;
+                    text-align: left;
+                    border-right: 1px dotted #ddd;
+                    font-size: 12px;
+                  }
+                
+                  th {
+                    background-color: #f5f5f5;
+                    color: black;
+                    padding: 8px;
+                    text-align: left;
+                    font-size: 12px;
+                    border-right: 1px dotted #ddd;
+                  }
+                </style>
+              </head>
+              <body>
+              <table>
+                <thead>
+                  <tr style="text-transform: capitalize">
+                    ${columns.map((header) => `<th>${header.replace(/_/g, ' ')}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data
+                    .map(
+                      (row) => `
+                    <tr>
+                      ${columns.map((header) => `<td>${row[header]}</td>`).join('')}
+                    </tr>
+                  `,
+                    )
+                    .join('')}
+                </tbody>
+              </table>
+            </body>
+            </html>
+          `;
+      // Set the HTML content of the page
+      await page.setContent(content);
+ 
+      // Generate the PDF and store it in a Buffer
+      const pdfBuffer = Buffer.from(
+        await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: { top: '50px', bottom: '50px', left: '20px', right: '20px' },
+          displayHeaderFooter: true,
+          headerTemplate: headerTemplate,
+          footerTemplate: footerTemplate,
+        }),
+      );
+ 
+      // Close the browser
+      await browser.close();
+ 
+      // Return the PDF as a Buffer
+      return pdfBuffer;
+    } catch (error) {
+      console.error(error.message);
+      throw new ConflictException('Something went wrong while generating PDF file');
+    }
+  }
+ 
 }
