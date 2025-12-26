@@ -17,10 +17,10 @@ export class EmployeeService {
         },
       });
 
-      this.logger.log(`Created employee: ${employee.name} (ID: ${employee.id})`);
+     console.log(`Created employee: ${employee.name} (ID: ${employee.id})`);
       return employee;
     } catch (error) {
-      this.logger.error(`Failed to create employee: ${error.message}`, error.stack);
+     console.error(`Failed to create employee: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -37,7 +37,7 @@ export class EmployeeService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to fetch employees: ${error.message}`, error.stack);
+     console.error(`Failed to fetch employees: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -64,7 +64,7 @@ export class EmployeeService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Failed to fetch employee ${id}: ${error.message}`, error.stack);
+     console.error(`Failed to fetch employee ${id}: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -81,13 +81,13 @@ export class EmployeeService {
       });
       
 
-      this.logger.log(`Updated employee: ${employee.name} (ID: ${employee.id})`);
+     console.log(`Updated employee: ${employee.name} (ID: ${employee.id})`);
       return employee;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Failed to update employee ${id}: ${error.message}`, error.stack);
+     console.error(`Failed to update employee ${id}: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -101,13 +101,13 @@ export class EmployeeService {
         where: { id },
       });
 
-      this.logger.log(`Deleted employee with ID: ${id}`);
+     console.log(`Deleted employee with ID: ${id}`);
       return { message: `Employee with ID ${id} has been deleted`, id };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Failed to delete employee ${id}: ${error.message}`, error.stack);
+     console.error(`Failed to delete employee ${id}: ${error.message}`, error.stack);
       throw error;
     }
   }

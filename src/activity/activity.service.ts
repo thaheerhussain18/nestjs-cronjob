@@ -35,7 +35,7 @@ export class ActivityService {
         },
       });
 
-      this.logger.log(`Created activity for employee: ${employee.name} (ID: ${activity.id})`);
+     console.log(`Created activity for employee: ${employee.name} (ID: ${activity.id})`);
       return activity;
     } catch (error) {
       throw error;
@@ -110,6 +110,4 @@ export class ActivityService {
       throw error;
     }
   }
-
-
 }
